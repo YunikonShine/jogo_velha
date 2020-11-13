@@ -1,12 +1,13 @@
 import "./Game.css";
 import { useState } from "react";
-import PropTypes from "prop-types";
 import { Button, Col, Container, Row } from "react-bootstrap";
-import { Link, withRouter } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import Axios from "axios";
 
 const Game = (props) => {
+  let history = useHistory();
   let tempTimer = 0;
+  const [name, setName] = useState("");
   const [timer, setTimer] = useState(0);
   const [start, setStart] = useState(true);
   const [positions, setPositions] = useState([
@@ -15,7 +16,9 @@ const Game = (props) => {
     ["", "", ""],
   ]);
   const [isCross, setCross] = useState(true);
+  const [moves, setMoves] = useState(0);
   const [status, setStatus] = useState("");
+  const [finalTime, setFinalTime] = useState(0);
 
   const draw = () => {
     let tempPosition = positions;
@@ -29,7 +32,7 @@ const Game = (props) => {
     return true;
   };
 
-  const verifyVictory = () => {
+  const verifyVictory = (tempCross) => {
     const victoryConditions = [
       [0, 1, 2],
       [0, 4, 8],
@@ -41,7 +44,7 @@ const Game = (props) => {
       [6, 7, 8],
     ];
 
-    let value = isCross ? "X" : "O";
+    let value = tempCross ? "X" : "O";
     let index = -1;
     let tempPosition = [];
     for (let i = 0; i < 3; i++) {
@@ -54,28 +57,41 @@ const Game = (props) => {
     }
 
     victoryConditions.forEach((condition) => {
+      if (draw()) {
+        setStatus("EMPATE!!!");
+        return "";
+      }
       if (checker(tempPosition, condition)) {
-        if (isCross) {
-          Axios.get("http://www.localhost:3001/games").then((response) => {
-            Axios.post("http://www.localhost:3001/games", {
-              id: response.data[response.data.length - 1].id + 1,
-              name: "Vinicius",
-              moves: 6,
-              time: tempTimer,
-            }).then(() => {
-              this.props.history.push("/");
-            });
-          });
+        if (tempCross) {
+          setStatus("VITORIA!!!");
+          setFinalTime(timer);
+          return "";
         } else {
-          alert("DERROTA");
+          setStatus("DERROTA!!!");
+          return "";
         }
       }
     });
-
-    return null;
   };
 
   let checker = (arr, target) => target.every((v) => arr.includes(v));
+
+  const save = () => {
+    Axios.get("http://www.localhost:3001/games").then((response) => {
+      let newId = 1;
+      if (response.data.length > 0) {
+        newId = response.data[response.data.length - 1].id + 1;
+      }
+      Axios.post("http://www.localhost:3001/games", {
+        id: newId,
+        name: name,
+        moves: moves,
+        time: finalTime,
+      }).then(() => {
+        history.push("/");
+      });
+    });
+  };
 
   const randomPlay = () => {
     let ok = false;
@@ -90,7 +106,7 @@ const Game = (props) => {
         ok = true;
       }
     } while (!ok);
-    verifyVictory();
+    verifyVictory(false);
   };
 
   const random = () => {
@@ -98,19 +114,23 @@ const Game = (props) => {
   };
 
   const action = (a, b) => {
-    if (start) {
-      counter();
-      setStart(false);
-    }
-    if (positions[a][b] === "") {
-      let tempPosition = positions;
-      tempPosition[a][b] = isCross ? "X" : "O";
-      setPositions(tempPosition);
-      setCross(false);
-      verifyVictory();
-      setTimeout(function () {
-        randomPlay();
-      }, 2000);
+    if (status === "") {
+      if (start) {
+        counter();
+        setStart(false);
+      }
+      if (isCross && positions[a][b] === "") {
+        let tempPosition = positions;
+        tempPosition[a][b] = isCross ? "X" : "O";
+        setPositions(tempPosition);
+        setCross(false);
+        verifyVictory(true);
+        let tempMoves = moves;
+        setMoves(++tempMoves);
+        setTimeout(function () {
+          randomPlay();
+        }, 2000);
+      }
     }
   };
 
@@ -233,9 +253,22 @@ const Game = (props) => {
         <h2>{complete(parseInt(timer / 60))}</h2>
         <h2>:</h2>
         <h2>{complete(timer % 60)}</h2>
+        <br></br>
       </div>
+      <Row className="d-flex justify-content-center mt-3">
+        <h2>{status}</h2>
+      </Row>
+      {status === "VITORIA!!!" && (
+        <Row className="d-flex justify-content-center mt-3 mb-5">
+          <input
+            placeholder="Nome"
+            onChange={(e) => setName(e.target.value)}
+          ></input>
+          <Button onClick={() => save()}>Salvar</Button>
+        </Row>
+      )}
     </Container>
   );
 };
 
-export default withRouter(Game);
+export default Game;

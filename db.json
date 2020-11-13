@@ -1,14 +1,22 @@
 {
-    "games": [
-        {
-            "name": "Vinicius",
-            "moves": 6,
-            "time": 44
-        },
-        {
-            "name": "Amanda",
-            "moves": 6,
-            "time": 45
-        }
-    ]
+  "games": [
+    {
+      "id": 1,
+      "name": "nomezin",
+      "moves": 3,
+      "time": 14
+    },
+    {
+      "id": 2,
+      "name": "Nomeasfasad",
+      "moves": 3,
+      "time": 20
+    },
+    {
+      "id": 3,
+      "name": "nomeeeeeeeeeeeeee",
+      "moves": 3,
+      "time": 5
+    }
+  ]
 }
