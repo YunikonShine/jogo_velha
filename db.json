@@ -1,0 +1,16 @@
+{
+    "games": [
+        {
+            "id": 1,
+            "name": "Vinicius",
+            "moves": 6,
+            "time": 44
+        },
+        {
+            "id": 2,
+            "name": "Amanda",
+            "moves": 6,
+            "time": 45
+        }
+    ]
+}
