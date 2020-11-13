@@ -2,7 +2,8 @@ import "./Game.css";
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Button, Col, Container, Row } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
+import Axios from "axios";
 
 const Game = (props) => {
   let tempTimer = 0;
@@ -17,9 +18,10 @@ const Game = (props) => {
   const [status, setStatus] = useState("");
 
   const draw = () => {
+    let tempPosition = positions;
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
-        if (positions[i][j] === "") {
+        if (tempPosition[i][j] === "") {
           return false;
         }
       }
@@ -27,23 +29,68 @@ const Game = (props) => {
     return true;
   };
 
-  const randomPlay = () => {
-    if (!draw) {
-      let ok = false;
-      do {
-        let x = random();
-        let y = random();
-        if (positions[x][y] === "") {
-          let tempPosition = positions;
-          tempPosition[x][y] = "O";
-          setPositions(tempPosition);
-          setCross(true);
-          ok = true;
+  const verifyVictory = () => {
+    const victoryConditions = [
+      [0, 1, 2],
+      [0, 4, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [2, 4, 6],
+      [3, 4, 5],
+      [6, 7, 8],
+    ];
+
+    let value = isCross ? "X" : "O";
+    let index = -1;
+    let tempPosition = [];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        index++;
+        if (positions[i][j] == value) {
+          tempPosition.push(index);
         }
-      } while (!ok);
-    } else {
-      setStatus("Empate!!!");
+      }
     }
+
+    victoryConditions.forEach((condition) => {
+      if (checker(tempPosition, condition)) {
+        if (isCross) {
+          Axios.get("http://www.localhost:3001/games").then((response) => {
+            Axios.post("http://www.localhost:3001/games", {
+              id: response.data[response.data.length - 1].id + 1,
+              name: "Vinicius",
+              moves: 6,
+              time: tempTimer,
+            }).then(() => {
+              this.props.history.push("/");
+            });
+          });
+        } else {
+          alert("DERROTA");
+        }
+      }
+    });
+
+    return null;
+  };
+
+  let checker = (arr, target) => target.every((v) => arr.includes(v));
+
+  const randomPlay = () => {
+    let ok = false;
+    do {
+      let x = random();
+      let y = random();
+      if (positions[x][y] === "") {
+        let tempPosition = positions;
+        tempPosition[x][y] = "O";
+        setPositions(tempPosition);
+        setCross(true);
+        ok = true;
+      }
+    } while (!ok);
+    verifyVictory();
   };
 
   const random = () => {
@@ -60,6 +107,7 @@ const Game = (props) => {
       tempPosition[a][b] = isCross ? "X" : "O";
       setPositions(tempPosition);
       setCross(false);
+      verifyVictory();
       setTimeout(function () {
         randomPlay();
       }, 2000);
@@ -190,4 +238,4 @@ const Game = (props) => {
   );
 };
 
-export default Game;
+export default withRouter(Game);
